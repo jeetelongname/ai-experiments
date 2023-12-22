@@ -4,4 +4,8 @@
   net.mikera/core.matrix {:mvn/version "0.63.0"}
   org.clojure/clojure {:mvn/version "1.11.1"}}
  :aliases
- {:serve {:exec-fn dev.user/run}}}
+ {:serve {:exec-fn dev.user/run}
+  :nextjournal/clerk
+  {:exec-fn nextjournal.clerk/build!
+   :exec-args {:paths ["notebooks/part1.clj" "notebooks/part2.clj" "notebooks/part3.clj"]}
+   :nextjournal.clerk/aliases [:dev]}}}
