@@ -30,15 +30,12 @@
     0))
 
 ;; ## Perceptron
-;; $y = \Theta(w_{1}x_{1} + w_{2}x_{2} + b)$
-;;
 ;; - $\Theta$: activation function
 ;; - x: input vector
 ;; - w: weight vector
 ;; - b: bias scalar
 ;;
-;; $out = \Theta(\vec{w} \cdot \vec{x} + b)$
-;; argument
+;; $y = \Theta(\vec{w} \cdot \vec{x} + b)$
 (defn perceptron [ϴ x w b]
   (ϴ (+ (matrix/dot w x)
         b)))
@@ -58,7 +55,7 @@
 ;; In the case of code we can then define the or function as such
 
 (defn or-perceptron [x]
-  (perceptron unit-step x [1 1] -1 ))
+  (perceptron unit-step x [1 1] -1))
 
 ;; we can then test this on all of the input.
 ^{::clerk/visibility {:code :fold}}
@@ -73,6 +70,47 @@
                      (keys or-data))})
 
 ;; ## Question 2, Not Solving the XOR problem
+;;
+;; The perceptron has been shown to only be able to solve linearly seperable
+;; problems. For example we can plot all the solutions of the OR function on a
+;; graph and draw on linear line inbetween the different solutions.
+^{::clerk/visibility {:code :fold}}
+(clerk/plotly
+ {:data [{:name "One"
+          :x [0 1 1] :y [1 0 1]
+          :mode "markers"
+          :marker {:size [10 10 10]}}
+         {:name "Zero"
+          :x [0] :y [0]
+          :mode "markers"
+          :marker {:size [10]}}
+         {:name "Linear separator"
+          :x [0 0.9] :y [0.9 0]
+          :mode "lines"}]
+  :layout {:xaxis {:dtick 1}
+           :yaxis {:dtick 1}}
+  :config {:displayModeBar false
+           :displayLogo false}})
+
+;; However for the XOR Function there is no linear line that we could draw
+;; that separates the solutions, There are quadratic functions that can
+;; seperate out the two types of output but no linear function. To be able to
+;; create an XOR function we would need multi layer perceptrons and or more
+;; perceptrons chained together.
+^{::clerk/visibility {:code :fold}}
+(clerk/plotly
+ {:data [{:name "Zero"
+          :x [0 1] :y [0 1]
+          :mode "markers"
+          :marker {:size [10 10]}}
+         {:name "One"
+          :x [0 1] :y [1 0]
+          :mode "markers"
+          :marker {:size [10 10]}}]
+  :layout {:xaxis {:dtick 1}
+           :yaxis {:dtick 1}}
+  :config {:displayModeBar false
+           :displayLogo false}})
 
 ^{::clerk/visibility {:code :hide}}
 (clerk/html
