@@ -1,0 +1,7 @@
+{:paths ["dev" "notebooks" "resources"]
+ :deps
+ {io.github.nextjournal/clerk {:git/sha "babbba51f9e3d0deeadfcc9ac33895b8349c1179"}
+  net.mikera/core.matrix {:mvn/version "0.63.0"}
+  org.clojure/clojure {:mvn/version "1.11.1"}}
+ :aliases
+ {:serve {:exec-fn dev.user/run}}}
