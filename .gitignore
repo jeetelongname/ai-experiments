@@ -1,0 +1,8 @@
+/.cache/
+/.clerk/
+/.clj-kondo/
+/.cpcache/
+/.lsp/
+/.nrepl-port
+/notebooks/Full_NN_c.py
+/notebooks/gridworld(1).py
