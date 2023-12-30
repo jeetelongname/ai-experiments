@@ -14,6 +14,9 @@ Once you get past the notation, the index chasing, the sheer madness of it, it
 becomes somwhat simple to grok, even if you have to treat parts as black boxes
 that just kinda work. 
 
+I will assume that you know *something* about neural networks. If not, I suggest
+reading over the resources linked below, praying or both.
+
 # Resources
 
 To start off I will share some resources I used to get started, I will be
@@ -96,4 +99,36 @@ through them now
 Like this says, we are looking for the Error of the output layer. 
 
 $\delta^L = \nabla_a C \odot \sigma'(z^L)$
+
+- $L$: is just the number of layers, as I said before superscripts are indexes.
+- $l$: is the layer we are on. think of it as the `i` in a for loop.
+- $\delta^L$: this means that this term is the error at $L$ in other words the
+  error of the output layer! thats all it is.
+- $z^L$: $z$ is defined as $w \cdot a + b$ in other words, its the output of
+  feed forward without applying the activation function! 
+  $z^l = w^l \cdot a^l + b^l$ for any layer $l$, that means $z^L$ is $z$ for the
+  output layer. Note you don't need to do anything new for this, as this is the
+  same code we are using in feed forward all we need to do is save the output of
+  $w^l \cdot a^l + b^l$ when doing feed forward. 
+- $\nabla_a C$: is defined as the rate of change of the cost function. In other
+  words its the derivative of the cost function, in other words all this scary
+  term is, is $a^L - y$. Where $a^L$ is the output of the NN, and $y$ is the
+  target vector. Thats it. 
+  
+  We can write this same equation out as such
+  
+  $\delta^L = (a^L - y) \odot \sigma'(z^L)$ 
+  
+Which is much more approachable. In words we could describe this equation as.
+
+> The Error of the output layer is equal to, the Activation of the output
+> layer vector subtracted from the target vector, element multiplied with,
+> the derivative of sigmoid applied to the z quantity vector.
+
+In python this code can be defined as
+```python
+delta_L = (activations[-1] - target) * sigma_der(zs[-1])
+```
+activations is a list of all of the activations of the network, same for zs for
+the z quantity, -1 takes out the last element of a python list.
 
