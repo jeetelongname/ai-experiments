@@ -4,8 +4,7 @@
   {:nextjournal.clerk/toc :collapsed}
   (:require [nextjournal.clerk :as clerk]
             [nextjournal.clerk.experimental :as cx]
-            [clojure.core.matrix :as matrix]
-            [clojure.math :as math]))
+            [clojure.core.matrix :as matrix]))
 
 ;; ## Training data
 ;; Our data is the truth table of the function we are using,
@@ -36,9 +35,9 @@
 ;; - b: bias scalar
 ;;
 ;; $y = \Theta(\vec{w} \cdot \vec{x} + b)$
-(defn perceptron [ϴ x w b]
-  (ϴ (+ (matrix/dot w x)
-        b)))
+(defn perceptron [theta x w b]
+  (theta (+ (matrix/dot w x)
+            b)))
 
 ;; ## Question 1, Solving the OR problem
 ;; For the OR function it will take in two inputs, with a weight vector
@@ -95,8 +94,7 @@
 ;; However for the XOR Function there is no linear line that we could draw
 ;; that separates the solutions, There are quadratic functions that can
 ;; seperate out the two types of output but no linear function. To be able to
-;; create an XOR function we would need multi layer perceptrons and or more
-;; perceptrons chained together.
+;; create an XOR function we would need multi layer networks of perceptrons.
 ^{::clerk/visibility {:code :fold}}
 (clerk/plotly
  {:data [{:name "Zero"
