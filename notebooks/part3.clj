@@ -10,14 +10,14 @@
 ;; ### Helpers
 (def zip (partial map vector))
 
-^{::clerk/visibility {:code :hide :result :hide}}
-(fn [l l-len]
-  {:der (mapv #(matrix/zero-matrix ;;
-                (get l %)
-                (get l (inc %)))
-              (range (dec l-len)))
-   :out (mapv #(matrix/zero-vector (get l %))
-              (range l-len))})
+(defn vector->matrix
+  "Turn a vector of (x) into a matrix of (1 x)"
+  [vector]
+  (matrix/reshape
+   vector
+   [1 (first (matrix/shape vector))]))
+
+(def vec-reverse (comp vec reverse))
 
 ;; ## Network creation
 ;;
@@ -52,8 +52,8 @@
                    (range l-len))
      :theta activation-f
      :theta-der activation-der
-     :l l
-     :l-len l-len}))
+     :layers l
+     :num-layers l-len}))
 
 ;; ## activation function
 ;; sigmoid, this takes in a single scalar and returns a scalar,
@@ -157,42 +157,53 @@
 ;; and code in a separate document. If you are reading this Ioannis, you can
 ;; check it out too, though I would assume you would get less out of it. you can
 ;; find that document [here](/notebooks/backpropagation.md)
-(defn back-propagate [{:keys [theta-der l l-len weights biases] :as network} x target]
+(defn back-propagate [{:keys [theta-der layers num-layers weights] :as network} x target]
   (let [{:keys [activations zs]} (feed-forward network x) ;; Step 1
         ;; go through everything backwards.
-        zs (vec (reverse zs))
-        activations (vec (reverse activations))
-        weights (vec (reverse weights))
+        zs (vec-reverse zs)
+        activations (vec-reverse activations)
+        weights (vec-reverse weights)
         ;; Eq (1), Step 2
         error (matrix/sub (first activations) target)
-        delta-out (matrix/mul error (matrix/emap theta-der (first zs)))]
-    (reduce (fn [{:keys [delta-l nabla-b nabla-w]} layer]
-              (let [z (get zs layer)
-                    w (get weights (dec layer))
-                    a (get activations layer)
-                    ;; Eq (2), Step 3
-                    delta-l (matrix/mul (matrix/dot
-                                         delta-l
-                                         (matrix/transpose w))
-                                        (matrix/emap theta-der z))]
-                ;; step 4
-                {:delta-l delta-l
-                 ;; Eq (3)
-                 :nabla-b (assoc nabla-b layer delta-l)
-                 ;; Eq (4)
-                 :nabla-w (assoc nabla-w layer
-                                 (matrix/dot (matrix/transpose a) delta-l))}))
-            {:delta-l delta-out
-             :nabla-b (mapv (constantly nil) l)
-             :nabla-w (mapv (constantly nil) (range (dec l-len)))}
-            (vec (range 1 (dec l-len))))))
+        delta-out (matrix/mul error (matrix/emap theta-der (first zs)))
+        {:keys [nabla-b nabla-w]} (reduce
+                                   (fn [{:keys [delta-next nabla-b nabla-w]} layer]
+                                     (let [z (get zs layer)
+                                           w (get weights (dec layer))
+                                           a (vector->matrix
+                                              (get activations (inc layer)))
+                                           ;; Eq (2), Step 3
+                                           delta-l (matrix/mul
+                                                    (matrix/dot
+                                                     delta-next
+                                                     (matrix/transpose w))
+                                                    (matrix/emap theta-der z))]
+                                       ;; step 4
+                                       {:delta-next delta-l
+                                        ;; Eq (3)
+                                        :nabla-b (assoc nabla-b layer delta-l)
+                                        ;; Eq (4)
+                                        :nabla-w (assoc nabla-w layer
+                                                        (matrix/dot
+                                                         (matrix/transpose a)
+                                                         (vector->matrix delta-l)))}))
+                                   {:delta-next delta-out
+                                    :nabla-b (mapv (constantly nil) (rest layers))
+                                    :nabla-w (mapv (constantly nil) (range (dec num-layers)))}
+                                   (vec (range 1 (dec num-layers))))]
+    ;; add in the last values like so.
+    {:nabla-b (vec-reverse (assoc nabla-b 0 delta-out))
+     :nabla-w (vec-reverse (assoc nabla-w 0
+                                  (matrix/dot
+                                   (matrix/transpose
+                                    (vector->matrix (second activations)))
+                                   (vector->matrix delta-out))))}))
 
-(clerk/example
- (let [x [0.2 0.1]
-       y (apply * x)]
-   (back-propagate network x y)))
+(let [x [0.2 0.1]
+      y (apply * x)]
+  (back-propagate network x y))
 
 ;; I am using stochastic gradient decent
-(defn gradient-decent [network learning-rate])
+(defn gradient-decent [network learning-rate data])
 
 (defn train [network x target epochs learning-rate])
