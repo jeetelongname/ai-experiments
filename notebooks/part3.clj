@@ -155,7 +155,8 @@
 ;; [^1]: For my comrades who are reading this in an effort to grok it for
 ;; yoursef. Ill provide resources, diagrams and worded versions of the equations
 ;; and code in a separate document. If you are reading this Ioannis, you can
-;; check it out too, though I would assume you would get less out of it.
+;; check it out too, though I would assume you would get less out of it. you can
+;; find that document [here](/notebooks/backpropagation.md)
 (defn back-propagate [{:keys [theta-der l l-len weights biases] :as network} x target]
   (let [{:keys [activations zs]} (feed-forward network x) ;; Step 1
         ;; go through everything backwards.
@@ -179,10 +180,8 @@
                  ;; Eq (3)
                  :nabla-b (assoc nabla-b layer delta-l)
                  ;; Eq (4)
-                 :nabla-w (assoc nabla-w (dec layer)
-                                 (matrix/dot
-                                  delta-l
-                                  (matrix/transpose a)))}))
+                 :nabla-w (assoc nabla-w layer
+                                 (matrix/dot (matrix/transpose a) delta-l))}))
             {:delta-l delta-out
              :nabla-b (mapv (constantly nil) l)
              :nabla-w (mapv (constantly nil) (range (dec l-len)))}

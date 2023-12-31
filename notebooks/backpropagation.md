@@ -1,8 +1,19 @@
 # Back Propation, A high level overview
 ```clojure
 (ns backpropagation
-  {:nextjournal.clerk/visibility {:code :hide}}
+  {:nextjournal.clerk/visibility {:code :hide}
+   :nextjournal.clerk/toc :collapsed}
   (:require [nextjournal.clerk :as clerk]))
+
+^{::clerk/visibility {:result :hide}}
+(def mermaid-viewer
+  {:transform-fn clerk/mark-presented
+   :render-fn '(fn [value]
+                 (when value
+                   [nextjournal.clerk.render/with-d3-require {:package ["mermaid@8.14/dist/mermaid.js"]}
+                    (fn [mermaid]
+                      [:div {:ref (fn [el] (when el
+                                             (.render mermaid (str (gensym)) value #(set! (.-innerHTML el) %))))}])]))})
 ```
 
 # Introduction
@@ -11,7 +22,7 @@ The back propagation algorithm is one that is steeped in massive amounts of
 maths and understanding, its not something that can be picked up simply since
 its so rich. that being said its also not unotanably difficult to understand
 Once you get past the notation, the index chasing, the sheer madness of it, it
-becomes somwhat simple to grok, even if you have to treat parts as black boxes
+becomes somewhat simple to grok, even if you have to treat parts as black boxes
 that just kinda work. 
 
 I will assume that you know *something* about neural networks. If not, I suggest
@@ -132,3 +143,105 @@ delta_L = (activations[-1] - target) * sigma_der(zs[-1])
 activations is a list of all of the activations of the network, same for zs for
 the z quantity, -1 takes out the last element of a python list.
 
+## Equation 2: Error of the current layer in terms of the next layer. 
+This equation allows us to *back propage* the error to each layer. 
+In this case the next layer. If we are currently on the layer L2, we would work
+out the error in terms of the output layer, if we were in L1, we would work out
+the error in terms of L2. so on.
+
+```clojure
+(clerk/with-viewer mermaid-viewer
+  "graph TD;
+      Input_Layer-->L1;
+      L1-->L2;
+      L2-->Output_Layer;")
+```
+Here is a graph to help visulise it.
+
+Now here is the equation.
+$\delta^l = ((w^{l+1})^T \cdot \delta^{l+1}) \odot \sigma'(z^l)$
+
+- $\delta^l$: error of the current layer
+- $(w^{l+1})^T$: the weight matrix of the next layer
+  [transposed](https://en.wikipedia.org/wiki/Transpose) Otherwise known as
+  fliping diagonally. [^1]
+- $\delta^{l+1}$  The error of the next layer
+- $z^l$ the z quantity of the current layer.
+
+This equation needs to be calcualted for every layer, we will discuss how this
+is done for each when we discuss the steps of the algorithm
+
+In words this alogorithm is saying
+> The Error of the current layer is equal to, the weights of the next layer
+> transposed and dot producted with the error of the next layer. This term is then
+> element multiplied with the sigmoid derivative applied to the current layers z
+> quantity.
+
+in python
+
+```python
+delta_l = np.dot(weights[l+1].transpose(), delta_l) * sigmoid_der(z[l])
+```
+`delta_l` in the right hand side is the last error vector. `l` is the current
+layer. 
+
+[^1]: Side note, Numpy kinda supports this superscript `T` syntax. You can
+    use the `ndarry.T` accessor like so, its defined as an alias to
+    `ndarry.transpose()`. You can read about it [here]( https://numpy.org/doc/stable/reference/generated/numpy.ndarray.T.html)
+## Equation 3: Rate of change of the cost in respect to any bias in the network
+ $\frac{\partial C}{\partial b^l_j} = \delta^l_j$
+
+ We are nearly there gamers. 
+ 
+ We have some new notation, there is this new subscript value j. This is to
+ signify what neuron we are talking about. 
+ This equation is saying, the value we need to use to change the bias of neuron
+ j in layer l, is equal to the error of the neuron j at layer l. 
+ In reality we don't need to think about that and we can say
+ ```python
+ nabla_b[l] = delta_l
+ ```
+   where `nabla_b` is storing all of the changes to all of the biases. 
+   and `delta_l` is what equation 2 calculated. and `l` is the layer we are on.
+
+In Words this equation is saying
+> The change of the baises in layer l is equal to, the error vector of the
+> current layer l.
+## Equation 4: Rate of change of the cost in respect to any weight of the network
+
+ $\frac{\partial C}{\partial w^l_{jk}} = a^{l-1}_k \cdot \delta^l_j$
+ 
+$k$ in this equation is meant to signify the last layer, rememeber that weights
+represent *connections* and because of that they need a start ($k$) and an end
+($j$). That all being said there is an easier way to talk about this equation.
+
+ $\frac{\partial C}{\partial w} = a_{in} \cdot \delta_{out}$
+ 
+ for any weight $w$, this is much easier to reason about. IMHO.
+ 
+in words this would be
+> The change of the weights l is equal to, the activation in multiplied with the
+> error out.
+
+In Python. 
+```python
+nabla_w[l] = np.dot(delta_l, activations[l-1].transpose())
+```
+I am not fully sure why we transpose, but I do because the book says so (this is
+the part I have not fully cracked 🙁)
+
+And we have done it! thats the 4 equations! Hopefully you see there uses but we
+need to now see how they connect together. 
+
+# The 4 steps of the algorithm. 
+
+The steps of the algorithm are as follows
+1. Feed Forward input $x$, noting down $z^l = w^l \cdot a^l + b^l$ and
+$a^l = \sigma'(z^l)$ where $l$ is each layer. I will assume your feed forward
+implementation already does this.
+2. Calculate the output layer error $\delta^L$: $\delta^L = \nabla_a C \odot \sigma'(z^L)$
+3. Backpropagate the error: Go backwards from the output layer, and calculate the error for the last layer.
+   In other words. For each $l = L - 1, L - 2, \dots, 2$ calculate $\delta^l = ((w^{l+1})^T \cdot \delta^{l+1}) \odot \sigma'(z^l)$
+4. Output the gradient of the cost function (so we can decend that gradient).
+   $\frac{\partial C}{\partial b^l_j} = \delta^l_j$
+   $\frac{\partial C}{\partial w^l_{jk}} = a^{l-1}_k \cdot \delta^l_j$
