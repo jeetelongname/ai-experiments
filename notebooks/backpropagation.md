@@ -225,17 +225,27 @@ in words this would be
 
 In Python. 
 ```python
-nabla_w[l] = np.dot(delta_l, activations[l-1].transpose())
+nabla_w[l] = np.dot(activations[l-1].transpose(), delta_l)
 ```
-I am not fully sure why we transpose, but I do because the book says so (this is
-the part I have not fully cracked 🙁)
 
-And we have done it! thats the 4 equations! Hopefully you see there uses but we
-need to now see how they connect together. 
+The reason we do the transposition is because we are trying to apply a
+transformation to the error vector, its vector matrix multiplication. If that does not
+click for you then I would not worry about it. Check out [three blue one browns
+video on the dot product.](https://www.youtube.com/watch?v=LyGKycYT2v0). 
+Depending on the language you are using you may need to reshape the vectors of x
+size into 1 by x matrix. you can do that like so: 
 
+```python
+matrix = vector.reshape(1, vector.shape[0])
+```
+
+You can then transpose this like normal.
+This is the reason I could not crack the last equation for anyone who is
+wondering.
 # The 4 steps of the algorithm. 
 
-The steps of the algorithm are as follows
+The steps of the algorithm are as follows:
+
 1. Feed Forward input $x$, noting down $z^l = w^l \cdot a^l + b^l$ and
 $a^l = \sigma'(z^l)$ where $l$ is each layer. I will assume your feed forward
 implementation already does this.
