@@ -3,8 +3,8 @@
 (ns part3
   {:nextjournal.clerk/toc :collapsed}
   (:require [nextjournal.clerk :as clerk]
-            [nextjournal.clerk.experimental :as cx]
             [clojure.core.matrix :as matrix]
+            [clojure.core.matrix.random :as random]
             [clojure.math :as math]))
 
 ;; ### Helpers
@@ -33,23 +33,21 @@
 ;;
 ;; We then initalise our weight matrix and our bias vectors like so. for each
 ;; layer we make a new matrix with the correct shape and initalise each element
-;; with a random number between zero and one. We do the same thing for the bias vectors,
-;; dropping the first one as the input vector does not have biases.
+;; with a random number between $[0 \dots 1)$. We do the same thing for the bias
+;; vectors, dropping the first one as the input vector does not have biases.
 (defn make-network [activation-f activation-der
                     x-size hidden-layers y-size]
   (let [l (vec (flatten [x-size hidden-layers y-size]))
         l-len (count l)]
-    {:weights (mapv #(matrix/emap
-                      (fn [_] (rand))
-                      (matrix/zero-array
-                       [(get l %)
-                        (get l (inc %))]))
+    {:weights (mapv #(random/sample-uniform
+                      [(get l %)
+                       (get l (inc %))])
                     (range (dec l-len)))
      :biases (into [] (comp
-                       (map #(matrix/zero-vector (get l %)))
-                       (drop 1)
-                       (map (partial matrix/emap (fn [_] (rand)))))
-                   (range l-len))
+                       ;; this creates a vector of size l
+                       (map random/sample-uniform)
+                       (drop 1))
+                   l)
      :theta activation-f
      :theta-der activation-der
      :layers l
@@ -187,6 +185,7 @@
                                                         (matrix/dot
                                                          (matrix/transpose a)
                                                          (vector->matrix delta-l)))}))
+                                   ;; inital value
                                    {:delta-next delta-out
                                     :nabla-b (mapv (constantly nil) (rest layers))
                                     :nabla-w (mapv (constantly nil) (range (dec num-layers)))}
@@ -203,7 +202,60 @@
       y (apply * x)]
   (back-propagate network x y))
 
-;; I am using stochastic gradient decent
-(defn gradient-decent [network learning-rate data])
+;; ## Gradient Decent
+;; Now that we know  the directions we need to go, we need to decend it!
+;; Instead of working out the change all in one go, we will do it in batches
+;; We will work out how to decend one batch, get a new network, and then use that new network
+;; and do it again until we run out of batches!
+;; This is known as Stochastic gradent decent.
+;;
+;; Here we are decending one batch, we back propagate for each value of x and y,
+;; collecting the results
+(defn decend-one-batch [learning-rate
+                        {:keys [biases weights] :as network}
+                        batch]
+  (let [n (count batch)
+        zero-arrays (comp matrix/zero-array matrix/shape)
+        [dnb dnw] (reduce
+                   (fn [[dnb dnw] [x y]]
+                     (let [{:keys [nabla-b nabla-w]}
+                           (back-propagate network x y)]
+                       [(mapv matrix/add nabla-b dnb)
+                        (mapv matrix/add nabla-w dnw)]))
+                   [(mapv zero-arrays biases)
+                    (mapv zero-arrays weights)]
+                   batch)
+        apply-learning-rate  (partial mapv (fn [value new-value]
+                                             (matrix/sub
+                                              value
+                                              (matrix/mul
+                                               (/ learning-rate n)
+                                               new-value))))]
+    (-> network
+        (assoc :weights (apply-learning-rate weights dnw))
+        (assoc :biases  (apply-learning-rate biases dnb)))))
 
-(defn train [network x target epochs learning-rate])
+;; we run for every epoch.
+;;
+;; In each epoch, we shuffle the data,
+;; partition it into groups of `batch-size`, and then loop over the batch
+;; decending once for each batch. once we have done that return the new network
+;; this is our trained network.
+;;
+;; Note there is no separate train function,
+;; performing gradient decent is our training
+(defn stochastic-gradient-decent
+  [network data epochs learning-rate batch-size]
+  (reduce (fn [network epoch]
+            (let [batches (->> data
+                               shuffle
+                               (partition batch-size))
+                  new-net (reduce (partial decend-one-batch learning-rate)
+                                  network
+                                  batches)]
+              (printf "Epoch %d\n" epoch)
+              new-net))
+          network
+          (range epochs)))
+
+;; ## Training Data
