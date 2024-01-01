@@ -255,3 +255,62 @@ implementation already does this.
 4. Output the gradient of the cost function (so we can decend that gradient).
    $\frac{\partial C}{\partial b^l_j} = \delta^l_j$
    $\frac{\partial C}{\partial w^l_{jk}} = a^{l-1}_k \cdot \delta^l_j$
+
+The way we should think about the algorithm is the first two steps "seed"
+the algorithm, the next two back propagate the error through the layers.
+
+If i were to write this in a python like pseudocode. 
+
+```python
+def backprop(network, x, target):
+  # initialise these for later.
+  nabla_biases = [None for _ in network.biases]
+  nabla_weights = [None for _ in network.weights]
+  
+  # Seed of the algorithm.
+  activations, zs = feedforward(network, x)
+
+  # Eq 1
+  error = activations.last - target
+  delta_L = error * sigmoid_derivative(zs.last)
+  delta_l = delta_L
+
+  # set the changes in the output layer
+  # Eq 3
+  nabla_biases.last = delta_l
+  # Eq 4
+  nabla_weights.last = dot(activations[-2].transpose(), delta_l)
+  for layer in range(2, network.num_layers):
+    # using pythons negative indexing we can go through everything backwards
+    z = zs[-l]
+    
+    # Eq 2
+    delta_l = dot(network.weights[-l+1].transpose(), delta_l) * sigmoid_prime(z)
+    # Eq 3
+    nabla_biases[-l] = delta_l 
+    # Eq 4
+    nabla_weights[-l] = dot(activations[-l+1].transpose(), delta_l) 
+    
+  return nabla_weights, nabla_biases 
+```
+
+Refer to the 4 equations, you should see them pop out, you should also be able
+to see how everything connects together. Once you understand what each part is
+doing its not a hard thing to implement. How it does it, is another question. If
+you want to get into that check out the resources again. notably read Michael
+Nielsen's [chapter on the
+matter](http://neuralnetworksanddeeplearning.com/chap2.html). You can find an
+actual python implementation near the end of the chapter (just replace `xrange`
+with `range`). You can then take these changes and use them in gradient decent,
+I won't discuss that here, you can check out the resources, Ioannis's
+implementation. or my code found in [part 3](/notebooks/part3.clj) if you like
+clojure.
+
+# Conclusions 
+
+We have covered the back propagation algorithm, breaking down each equation into
+things we can reason about, framing it in a couple of ways to hopefully make it
+easier to grasp at, after this decomposition and rebuilding we have gone through
+the steps of the algorithm. 
+Hopefully this demystifies the algorithm. along side the resources provided you
+should not have problems handling this yourself! Good luck comrades 🫡.
