@@ -1,0 +1,88 @@
+# Welcome
+
+# **PREREQUISITES**
+
+- Install the clojure cli tools
+  Clojure only works on POSIX systems (easily).
+  in this case you will need to either have a linux machine, or a mac
+  Follow the instructions on [the clojure install
+  page](https://clojure.org/guides/install_clojure)
+  I will provide simplified instructions
+- Install Java. 
+  Java versions 8, 11, 17 and 21 are all officially supported. but interim
+  releases are also said to work. 
+  What is needed for the `java` executable to be on your `$PATH` and
+  `$JAVA_HOME` to be set. both of these things can be done by package managers.
+
+## Mac
+  
+On a Mac with [brew](https://brew.sh/) you can use the `brew` command like
+so
+
+``` shell
+brew install clojure/tools/clojure
+```
+
+There is also an install script made for POSIX systems
+
+``` shell
+curl -L -O https://github.com/clojure/brew-install/releases/latest/download/posix-install.sh
+chmod +x posix-install.sh
+sudo ./posix-install.sh
+```
+
+This will create the files `/usr/local/bin/clj`, `/usr/local/bin/clojure`, and the directory `/usr/local/lib/clojure`
+
+## Linux 
+
+The Clojure CLI is available in many package repositories, you can find out
+[here](https://repology.org/project/clojure/versions).
+
+For some major distributions:
+
+``` shell
+# ubuntu / debian
+sudo apt install clojure
+
+# fedora / rhel / centos
+sudo dnf install clojure
+
+# arch
+sudo pacman -S clojure
+```
+
+If you have [linux brew](https://brew.sh) you can use brew like mentioned before
+
+``` shell
+brew install clojure/tools/clojure
+```
+
+There is also a linux install script
+
+This will create the files `/usr/local/bin/clj`, `/usr/local/bin/clojure`, and the directory `/usr/local/lib/clojure`
+``` shell
+curl -L -O https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh
+chmod +x linux-install.sh
+sudo ./linux-install.sh
+```
+
+# **RUNNING**
+
+If you have installed the clojure CLI successfully. 
+
+you can then run the program using this command in the root of the project (same
+directory as the `deps.edn` file)
+
+
+This will start the web server on https://localhost:7777 navigate to that to be
+able to see the output (which are interactive notebooks). This will also install
+all dependencies needed. It will look like its frozen, please wait for a couple
+of seconds.
+
+``` shell
+clj -X:serve
+```
+
+then like said navigate to https://localhost:7777
+
+Instructions will follow from there.
