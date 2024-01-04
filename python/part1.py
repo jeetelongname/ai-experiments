@@ -30,7 +30,7 @@ print("""
 # ## Question 1. Correct creation of the population
 #
 # here we need to generate an individual,
-# An individual is represented as a lsttor of ints,
+# An individual is represented as a list of ints,
 # rand-int will generate numbers from $[0 ... n)$
 # In this case our genome size is 32 so we take 32 random values like so.
 """)
@@ -136,17 +136,17 @@ print("""
 # crossover is when we take two parents and cut them at some kind of random
 # interval, this gives us two new children.
 """)
-# this helper function takes a lst and splits it, returning the two halfs,
-# this is an $O(1)$ operation which is the main reason we used lsttors
+# this helper function takes a vec and splits it, returning the two halfs,
+# this is an $O(1)$ operation which is the main reason we used vectors
 # in the first place
-def lst_split(lst, cut_point):
-    return lst[:cut_point], lst[cut_point:]
+def vec_split(vec, cut_point):
+    return vec[:cut_point], vec[cut_point:]
 
 def crossover(individuals):
     ind1, ind2 = individuals
     cut_point = random.randint(0, 32)  # Cut point between 0 and 32 (inclusive)
-    ind1_f, ind1_l = lst_split(ind1, cut_point)
-    ind2_f, ind2_l = lst_split(ind2, cut_point)
+    ind1_f, ind1_l = vec_split(ind1, cut_point)
+    ind2_f, ind2_l = vec_split(ind2, cut_point)
     return [ind1_f + ind2_l, ind2_f + ind1_l]
 
 print(*crossover([[1 for _ in range(32)], [0 for _ in range(32)]]), sep = "\n")
