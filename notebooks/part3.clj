@@ -268,7 +268,7 @@
 ;; Note there is no separate train function,
 ;; performing gradient decent is our training
 (defn stochastic-gradient-decent
-  [network data & {:keys [epochs learning-rate batch-size]}]
+  [network data & {:keys [epochs learning-rate batch-size test-data test-result]}]
   (reduce (fn [{:keys [network epochs]} epoch]
             (let [batches (->> data
                                shuffle
@@ -279,10 +279,10 @@
               {:epochs  (conj epochs
                               {:epoch epoch,
                                :msqe  (mean-square-error
-                                       [0.06]
-                                       (feed-forward-result new-net [0.2 0.3]))})
+                                       test-result
+                                       (feed-forward-result new-net test-data))})
                :network new-net}))
-          {:network network :epochs []}
+          {:network  network :epochs []}
           (range epochs)))
 
 ;; ## Training Data
@@ -331,7 +331,9 @@
    untrained-network data
    :epochs @epochs
    :learning-rate @learning-rate
-   :batch-size @batch-size))
+   :batch-size @batch-size
+   :test-result [(apply * [0.2 0.9])]
+   :test-data [0.2 0.9]))
 
 ;; Now we can see how it performs for each epoch, for each one we will take the
 ;; msqe and we can see that the error goes down pretty quickly.
