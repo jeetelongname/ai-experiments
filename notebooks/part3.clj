@@ -3,20 +3,28 @@
 (ns part3
   {:nextjournal.clerk/toc :collapsed}
   (:require [nextjournal.clerk :as clerk]
+            [nextjournal.clerk.experimental :as cx]
             [clojure.core.matrix :as matrix]
             [clojure.core.matrix.random :as random]
+            [clojure.core.matrix.stats :as stats]
             [clojure.math :as math]))
 
 ;; ### Helpers
-(def zip (partial map vector))
+;; These are general helpers I use all over the place
+;;
+;; Takes in N amount of vectors,
+;; and turns it into a vector of vectors
+;; with N elements
+(def zip (partial mapv vector))
 
-(defn vector->matrix
-  "Turn a vector of (x) into a matrix of (1 x)"
-  [vector]
+;; Turn a vector of size (x) into a matrix of size (1 x)
+(defn vector->matrix [vector]
   (matrix/reshape
    vector
    [1 (first (matrix/shape vector))]))
 
+;; Reverse a vector, the normal reverse will turn
+;; it into a lazy list.
 (def vec-reverse (comp vec reverse))
 
 ;; ## Network creation
@@ -53,23 +61,31 @@
      :layers l
      :num-layers l-len}))
 
-;; ## activation function
+;; ### Activation function
 ;; sigmoid, this takes in a single scalar and returns a scalar,
 ;; use `matrix/emap` to apply this element wise
 (defn sigmoid [v]
-  (/ 1.0 (+ (math/exp (- v))
-            1)))
+  (/ (+ (math/exp (- v))
+        1)))
 
 ;; sigmoid derivative. acts and used the same as sigmoid above
-(defn sigmoid-prime [x]
-  (* x (- 1.0 x)))
+(defn sigmoid-prime [z]
+  (let [z (sigmoid z)]
+    (* z (- 1.0 z))))
 
-;; helper mentioned before, I can now make a sigmoid network like so.
+;; helper mentioned before
 (def make-sigmoid-network (partial make-network
                                    sigmoid
                                    sigmoid-prime))
 
-(def network (make-sigmoid-network 2 [5 5] 1))
+;; Finally I can make the untrained network.
+;; This network will follow us throughout this discussion.
+;; Like mentioned in network creation, this makes a network with:
+;; - 2 inputs
+;; - 10 neurons in one hidden layer
+;; - 1 output.
+(def ^:private
+  untrained-network (make-sigmoid-network 2 [10] 1))
 
 ;; ## Feed forward
 ;;
@@ -106,15 +122,16 @@
           (zip biases weights)))
 
 (clerk/table
- (feed-forward network [0.2 0.1]))
+ (feed-forward untrained-network [0.2 0.1]))
 
-(defn- feed-forward-simple [{:keys [weights biases theta]} x]
+(defn feed-forward-result [{:keys [weights biases theta]} x]
   (reduce (fn [x [b w]]
             (let [z (matrix/add (matrix/dot x w) b)]
               (matrix/emap theta z)))
           x (zip biases weights)))
 
-(feed-forward-simple network [0.2 0.1])
+(clerk/example
+ (feed-forward-result untrained-network [0.2 0.1]))
 ;; Showing we get the same final answer
 
 ;; ## Back Propagation
@@ -198,9 +215,10 @@
                                     (vector->matrix (second activations)))
                                    (vector->matrix delta-out))))}))
 
-(let [x [0.2 0.1]
-      y (apply * x)]
-  (back-propagate network x y))
+(clerk/comment
+  (let [x [0.2 0.1]
+        y (apply * x)]
+    (back-propagate untrained-network x y)))
 
 ;; ## Gradient Decent
 ;; Now that we know  the directions we need to go, we need to decend it!
@@ -210,7 +228,8 @@
 ;; This is known as Stochastic gradent decent.
 ;;
 ;; Here we are decending one batch, we back propagate for each value of x and y,
-;; collecting the results
+;; collecting the results. Once we have done that for all of the batches, we
+;; apply the learning rate to the current weights.
 (defn decend-one-batch [learning-rate
                         {:keys [biases weights] :as network}
                         batch]
@@ -218,44 +237,124 @@
         zero-arrays (comp matrix/zero-array matrix/shape)
         [dnb dnw] (reduce
                    (fn [[dnb dnw] [x y]]
-                     (let [{:keys [nabla-b nabla-w]}
-                           (back-propagate network x y)]
+                     (let [{:keys [nabla-b nabla-w]} (back-propagate network x y)]
                        [(mapv matrix/add nabla-b dnb)
                         (mapv matrix/add nabla-w dnw)]))
                    [(mapv zero-arrays biases)
                     (mapv zero-arrays weights)]
                    batch)
-        apply-learning-rate  (partial mapv (fn [value new-value]
-                                             (matrix/sub
-                                              value
-                                              (matrix/mul
-                                               (/ learning-rate n)
-                                               new-value))))]
+        apply-learning-rate (fn [value delta-value]
+                              (matrix/sub
+                               value
+                               (matrix/mul (/ learning-rate n)
+                                           delta-value)))]
     (-> network
-        (assoc :weights (apply-learning-rate weights dnw))
-        (assoc :biases  (apply-learning-rate biases dnb)))))
+        (assoc :weights (mapv apply-learning-rate weights dnw))
+        (assoc :biases  (mapv apply-learning-rate biases dnb)))))
 
-;; we run for every epoch.
+;; Quick definition of the mean square error function. subtract the target from
+;; the output, raise that to the power of 2 and find the mean of the vector.
+(defn mean-square-error [target output]
+  (stats/mean
+   (matrix/pow
+    (matrix/sub target output)
+    2)))
+
+;; In each epoch, we shuffle the data, partition it into groups of `batch-size`,
+;; and then loop over the batch decending once for each batch.
 ;;
-;; In each epoch, we shuffle the data,
-;; partition it into groups of `batch-size`, and then loop over the batch
-;; decending once for each batch. once we have done that return the new network
-;; this is our trained network.
+;; Once we have done that return the new network this is our trained network.
 ;;
 ;; Note there is no separate train function,
 ;; performing gradient decent is our training
 (defn stochastic-gradient-decent
-  [network data epochs learning-rate batch-size]
-  (reduce (fn [network epoch]
+  [network data & {:keys [epochs learning-rate batch-size]}]
+  (reduce (fn [{:keys [network epochs]} epoch]
             (let [batches (->> data
                                shuffle
                                (partition batch-size))
                   new-net (reduce (partial decend-one-batch learning-rate)
                                   network
                                   batches)]
-              (printf "Epoch %d\n" epoch)
-              new-net))
-          network
+              {:epochs  (conj epochs
+                              {:epoch epoch,
+                               :msqe  (mean-square-error
+                                       [0.06]
+                                       (feed-forward-result new-net [0.2 0.3]))})
+               :network new-net}))
+          {:network network :epochs []}
           (range epochs)))
 
 ;; ## Training Data
+;; For the training data, we will be doing multiplication of 2 numbers
+
+^{::clerk/sync true
+  ::clerk/viewer (partial cx/slider {:min 10 :max 1000})}
+(def ^:private num-inputs (atom 100))
+
+(def data
+  (let [num-inputs @num-inputs
+        x1 (random/sample-uniform num-inputs)
+        x2 (random/sample-uniform num-inputs)
+        inputs (zip x1 x2)
+        targets (matrix/reshape
+                 (matrix/mul x1 x2)
+                 [num-inputs 1])]
+    (zip inputs targets)))
+
+;; ## The final network
+;;
+;; Finally we can take our `untrained-network` from before and forge it in fire,
+;; If you are not reading this on the web then you can play with the sliders
+;; below.
+;;
+;; NOTE: sliding will send more inputs and run them one after another. Clicking
+;; on certain positions can resolve this
+
+^{::clerk/sync true
+  ::clerk/viewer (partial cx/slider {:min 1 :max 100})}
+(def ^:private epochs
+  (atom 50))
+
+^{::clerk/sync true
+  ::clerk/viewer (partial cx/slider {:min 0.01 :max 0.5 :step 0.01})}
+(def ^:private learning-rate
+  (atom 0.1))
+
+^{::clerk/sync true
+  ::clerk/viewer (partial cx/slider {:min 1 :max @num-inputs})}
+(def ^:private batch-size
+  (atom 10))
+
+(def ^:private trained-network
+  (stochastic-gradient-decent
+   untrained-network data
+   :epochs @epochs
+   :learning-rate @learning-rate
+   :batch-size @batch-size))
+
+;; Now we can see how it performs for each epoch, for each one we will take the
+;; msqe and we can see that the error goes down pretty quickly.
+^{::clerk/visibility {:code :fold}}
+(clerk/plotly
+ (let [epochs (trained-network :epochs)]
+   {:data [{:x (mapv :epoch epochs)
+            :y (mapv :msqe  epochs)
+            :mode "lines"}]}))
+
+;; Finally we can have a look at the outputs of the
+;; - the untrained network. to see how we started
+;; - the trained network, to see how we are doing now
+;; - our target
+;; - and the mean square error of the final test input
+^{::clerk/visibility {:code :fold}}
+(let [test [0.2 0.9]
+      target [(apply * test)]
+      output (feed-forward-result (trained-network :network) test)]
+  (clerk/table
+   [{"untrained" (feed-forward-result untrained-network test)
+     "trained"   output
+     "target"    target
+     "msqe"      (mean-square-error target output)}]))
+
+;; Done
