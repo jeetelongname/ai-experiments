@@ -230,11 +230,10 @@
 ;; Here we are decending one batch, we back propagate for each value of x and y,
 ;; collecting the results. Once we have done that for all of the batches, we
 ;; apply the learning rate to the current weights.
-(defn decend-one-batch [learning-rate
+(defn decend-one-batch [eta
                         {:keys [biases weights] :as network}
                         batch]
-  (let [n (count batch)
-        zero-arrays (comp matrix/zero-array matrix/shape)
+  (let [zero-arrays (comp matrix/zero-array matrix/shape)
         [dnb dnw] (reduce
                    (fn [[dnb dnw] [x y]]
                      (let [{:keys [nabla-b nabla-w]} (back-propagate network x y)]
@@ -246,7 +245,7 @@
         apply-learning-rate (fn [value delta-value]
                               (matrix/sub
                                value
-                               (matrix/mul (/ learning-rate n)
+                               (matrix/mul eta
                                            delta-value)))]
     (-> network
         (assoc :weights (mapv apply-learning-rate weights dnw))
@@ -273,7 +272,7 @@
             (let [batches (->> data
                                shuffle
                                (partition batch-size))
-                  new-net (reduce (partial decend-one-batch learning-rate)
+                  new-net (reduce (partial decend-one-batch (/ learning-rate batch-size))
                                   network
                                   batches)]
               {:epochs  (conj epochs
