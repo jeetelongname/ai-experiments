@@ -7,5 +7,9 @@
  {:serve {:exec-fn dev.user/run}
   :nextjournal/clerk
   {:exec-fn nextjournal.clerk/build!
-   :exec-args {:paths ["notebooks/part1.clj" "notebooks/part2.clj" "notebooks/part3.clj" "notebooks/backpropagation.md"]}
+   :exec-args {:paths ["notebooks/part1.clj"
+                       "notebooks/part2.clj"
+                       "notebooks/part3.clj"
+                       "notebooks/part4.clj"
+                       "notebooks/backpropagation.md"]}
    :nextjournal.clerk/aliases [:dev]}}}
