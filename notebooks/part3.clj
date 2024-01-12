@@ -87,6 +87,7 @@
 (def ^:private
   untrained-network (make-sigmoid-network 2 [10] 1))
 
+
 ;; ## Feed forward
 ;;
 ;; Our Feed Forward implementation takes in a network map and destructures it,
@@ -130,6 +131,7 @@
               (matrix/emap theta z)))
           x (zip biases weights)))
 
+^{::clerk/visibility {:code :hide}}
 (clerk/example
  (feed-forward-result untrained-network [0.2 0.1]))
 ;; Showing we get the same final answer
@@ -171,7 +173,7 @@
 ;; yoursef. Ill provide resources, diagrams and worded versions of the equations
 ;; and code in a separate document. If you are reading this Ioannis, you can
 ;; check it out too, though I would assume you would get less out of it. you can
-;; find that document [here](/notebooks/backpropagation.md)
+;; find that document [here](../notebooks/backpropagation.md)
 (defn back-propagate [{:keys [theta-der layers num-layers weights] :as network} x target]
   (let [{:keys [activations zs]} (feed-forward network x) ;; Step 1
         ;; go through everything backwards.
