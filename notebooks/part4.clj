@@ -31,8 +31,8 @@
            relu
            relu-derivative))
 
-(def ^:private untrained-network
-  (make-relu-network 2 [5 5] 1))
+(def ^:private
+  untrained-network (make-relu-network 2 [5 5] 1))
 
 (clerk/example
  (part3/feed-forward-result untrained-network [0.2 0.9]))
@@ -50,7 +50,7 @@
 ^{::clerk/sync true
   ::clerk/viewer (partial cx/slider {:min 0.0001 :max 0.5 :step 0.0001})}
 (def ^:private learning-rate
-  (atom 0.000589))
+  (atom 0.0064))
 
 ^{::clerk/sync true
   ::clerk/viewer (partial cx/slider {:min 1 :max @num-inputs})}
