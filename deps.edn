@@ -1,6 +1,6 @@
 {:paths ["dev" "notebooks" "resources"]
  :deps
- {io.github.nextjournal/clerk {:git/sha "babbba51f9e3d0deeadfcc9ac33895b8349c1179"}
+ {io.github.nextjournal/clerk {:git/sha "464d8fb8549df62a1178fb2fb5e8392dbac0028e"}
   net.mikera/core.matrix {:mvn/version "0.63.0"}
   org.clojure/clojure {:mvn/version "1.11.1"}}
  :aliases
@@ -11,5 +11,6 @@
                        "notebooks/part2.clj"
                        "notebooks/part3.clj"
                        "notebooks/part4.clj"
-                       "notebooks/backpropagation.md"]}
+                       "notebooks/backpropagation.md"]
+               :index "notebooks/index.clj"}
    :nextjournal.clerk/aliases [:dev]}}}
