@@ -11,6 +11,5 @@
                        "notebooks/part2.clj"
                        "notebooks/part3.clj"
                        "notebooks/part4.clj"
-                       "notebooks/backpropagation.md"]
-               :index "notebooks/index.clj"}
+                       "notebooks/backpropagation.md"]}
    :nextjournal.clerk/aliases [:dev]}}}

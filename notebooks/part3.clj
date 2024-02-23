@@ -162,7 +162,7 @@
 ;; 1. Feed Forward input $x$, noting down $z^l = w^l \cdot a^l + b^l$ and
 ;; $a^l = \sigma'(z^l)$ where $l$ is each layer. My feed forward implementation already does this.
 ;; 2. Calculate the output layer error $\delta^L$: $\delta^L = \nabla_a C \odot \sigma'(z^L)$ **(1)**
-;; 3. Backpropagate the error: Go backwards from the output layer, and calculate the error for the last layer.
+;; 3. Backpropahe error: Go backwards from the output layer, and calculate the error for the last layer.
 ;;    In other words. For each $l = L - 1, L - 2, ..., 2$ calculate $\delta^l = ((w^{l+1})^T \cdot \delta^{l+1}) \odot \sigma'(z^l)$ **(2)**
 ;; 4. Output the gradient of the cost function (so we can decend that gradient).
 ;;    $\frac{\partial C}{\partial b^l_j} = \delta^l_j$ **(3)**,
@@ -221,6 +221,8 @@
   (let [x [0.2 0.1]
         y (apply * x)]
     (back-propagate untrained-network x y)))
+
+
 
 ;; ## Gradient Decent
 ;; Now that we know  the directions we need to go, we need to decend it!
@@ -286,7 +288,7 @@
           {:network  network :epochs []}
           (range epochs)))
 
-;; ## Training Data
+;; ## Training
 ;; For the training data, we will be doing multiplication of 2 numbers
 
 ^{::clerk/sync true

@@ -9,4 +9,5 @@ https://localhost/7777"))
 
 (comment
   (clerk/show! 'nextjournal.clerk.tap)
-  (clerk/show! "notebooks/part3.clj"))
+  (clerk/show! "notebooks/part3.clj")
+  (clerk/halt!))

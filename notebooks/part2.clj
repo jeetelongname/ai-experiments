@@ -35,9 +35,9 @@
 ;; - b: bias scalar
 ;;
 ;; $y = \Theta(\vec{w} \cdot \vec{x} + b)$
-(defn perceptron [theta x w b]
-  (theta (+ (matrix/dot w x)
-            b)))
+(defn perceptron [x w b]
+  (unit-step (+ (matrix/dot w x)
+                b)))
 
 ;; ## Question 1, Solving the OR problem
 ;; For the OR function it will take in two inputs, with a weight vector
