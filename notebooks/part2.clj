@@ -54,7 +54,7 @@
 ;; In the case of code we can then define the or function as such
 
 (defn or-perceptron [x]
-  (perceptron unit-step x [1 1] -1))
+  (perceptron x [1 1] -1))
 
 ;; we can then test this on all of the input.
 ^{::clerk/visibility {:code :fold}}
